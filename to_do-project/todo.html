@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Responsive To‑Do App</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#7c3aed; --muted:#94a3b8; --glass: rgba(255,255,255,0.03);
+      --radius:14px; --max-width:980px;
+      color-scheme: dark;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:linear-gradient(180deg,#071023 0%, #0b1220 100%); color:#e6eef8}
+
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px}
+    .app{
+      width:100%;max-width:var(--max-width);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+      border-radius:18px;padding:26px;box-shadow:0 8px 30px rgba(2,6,23,0.6);
+      display:grid;grid-template-columns:1fr 360px;gap:22px;align-items:start
+    }
+
+    /* Left column - main todo area */
+    .main{
+      background:linear-gradient(180deg,var(--glass), rgba(255,255,255,0.01)); padding:18px;border-radius:12px;min-height:420px;
+      display:flex;flex-direction:column;gap:14px
+    }
+
+    header.app-head{display:flex;align-items:center;justify-content:space-between}
+    header.app-head h1{margin:0;font-size:20px;letter-spacing:0.4px}
+    header.app-head .sub{color:var(--muted);font-size:13px}
+
+    .adder{display:flex;gap:10px}
+    .input{flex:1;display:flex;align-items:center;background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px 12px;border-radius:10px}
+    .input input{flex:1;background:transparent;border:0;outline:none;color:inherit;font-size:15px}
+    button.add-btn{background:var(--accent);border:0;color:white;padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    button.add-btn:disabled{opacity:0.55;cursor:default}
+
+    ul.todos{list-style:none;margin:0;padding:6px 4px;display:flex;flex-direction:column;gap:8px;overflow:auto;max-height:440px}
+    li.todo{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));border:1px solid rgba(255,255,255,0.02)}
+    .check{width:20px;height:20px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);display:grid;place-items:center;cursor:pointer}
+    .check.checked{background:linear-gradient(90deg,var(--accent),#4f46e5);border:0}
+    .todo-text{flex:1;min-width:0}
+    .todo-text .txt{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .todo-text .txt.done{text-decoration:line-through;color:rgba(230,238,248,0.45)}
+    .controls{display:flex;gap:8px;align-items:center}
+    .icon-btn{background:transparent;border:0;padding:6px;border-radius:8px;cursor:pointer}
+    .icon-btn:hover{background:rgba(255,255,255,0.02)}
+
+    .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .chip{padding:8px 10px;border-radius:999px;background:transparent;border:1px solid rgba(255,255,255,0.03);font-size:13px;cursor:pointer}
+    .chip.active{background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.22)}
+
+    /* Right column - info & actions */
+    .side{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:12px;min-height:420px}
+    .stat{font-size:14px;color:var(--muted);margin-bottom:12px}
+    .btn-block{display:flex;gap:8px;flex-wrap:wrap}
+    .primary{background:var(--accent);border:0;padding:10px 12px;color:white;border-radius:10px;cursor:pointer}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:10px 12px;color:var(--muted);border-radius:10px;cursor:pointer}
+
+    footer{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;padding-top:10px}
+
+    /* Responsive */
+    @media (max-width:920px){
+      .app{grid-template-columns:1fr;}
+      .side{order:2}
+    }
+    @media (max-width:520px){
+      .app{padding:18px}
+      header.app-head h1{font-size:18px}
+      .input input{font-size:14px}
+    }
+
+    /* Small nice touches */
+    .editable{background:transparent;border:0;padding:6px;border-radius:6px;color:inherit}
+    .hidden{display:none}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="app" role="application" aria-label="Todo app">
+
+      <section class="main" aria-labelledby="main-heading">
+        <header class="app-head">
+          <div>
+            <h1 id="main-heading">My To‑Do List</h1>
+            <div class="sub">Fast • Responsive • Saves in your browser</div>
+          </div>
+          <div class="sub" id="time"></div>
+        </header>
+
+        <div class="adder" aria-hidden="false">
+          <div class="input" role="search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <input id="new-todo" placeholder="Add new task and press Enter..." aria-label="New task">
+          </div>
+          <button class="add-btn" id="addBtn">Add</button>
+        </div>
+
+        <ul class="todos" id="todoList" aria-live="polite">
+          <!-- items go here -->
+        </ul>
+
+        <footer>
+          <div class="filters" role="tablist" aria-label="Filters">
+            <button class="chip active" data-filter="all">All</button>
+            <button class="chip" data-filter="active">Active</button>
+            <button class="chip" data-filter="completed">Completed</button>
+          </div>
+          <div class="sub" id="leftCount">0 items</div>
+        </footer>
+      </section>
+
+      <aside class="side" aria-labelledby="side-heading">
+        <h2 id="side-heading">Quick Actions</h2>
+        <p class="stat">Manage tasks — reorder, edit, mark complete. Your list is stored locally.</p>
+        <div class="btn-block">
+          <button class="primary" id="clearCompleted">Clear Completed</button>
+          <button class="ghost" id="exportBtn" title="Download JSON">Export</button>
+          <button class="ghost" id="importBtn">Import</button>
+          <input type="file" id="importFile" accept="application/json" class="hidden">
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:14px 0">
+        <p class="stat">Tips</p>
+        <ol class="stat" style="padding-left:18px;margin:0;color:var(--muted)">
+          <li>Press Enter to add item.</li>
+          <li>Double-click a task to edit it.</li>
+          <li>Click the checkbox to toggle complete.</li>
+        </ol>
+      </aside>
+
+    </div>
+  </div>
+
+<script>
+  // Simple, dependency-free todo app with localStorage persistence
+  const todoListEl = document.getElementById('todoList');
+  const newTodoInput = document.getElementById('new-todo');
+  const addBtn = document.getElementById('addBtn');
+  const leftCount = document.getElementById('leftCount');
+  const chips = document.querySelectorAll('.chip');
+  const clearCompletedBtn = document.getElementById('clearCompleted');
+  const exportBtn = document.getElementById('exportBtn');
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
+  const timeEl = document.getElementById('time');
+
+  let todos = JSON.parse(localStorage.getItem('todos_v1') || '[]');
+  let filter = 'all';
+
+  function save(){ localStorage.setItem('todos_v1', JSON.stringify(todos)); }
+
+  function render(){
+    todoListEl.innerHTML = '';
+    const visible = todos.filter(t => filter === 'all' ? true : (filter === 'active' ? !t.done : t.done));
+    visible.forEach(todo => {
+      const li = document.createElement('li'); li.className = 'todo'; li.dataset.id = todo.id;
+      // checkbox
+      const check = document.createElement('button'); check.className = 'check' + (todo.done ? ' checked' : '');
+      check.setAttribute('aria-pressed', String(!!todo.done));
+      check.innerHTML = todo.done ? '&#10003;' : '';
+      check.addEventListener('click', () => { todo.done = !todo.done; save(); render(); });
+
+      // text
+      const textWrap = document.createElement('div'); textWrap.className = 'todo-text';
+      const span = document.createElement('span'); span.className = 'txt' + (todo.done ? ' done' : '');
+      span.textContent = todo.text;
+      span.title = todo.text;
+      span.tabIndex = 0;
+      // edit on dblclick
+      span.addEventListener('dblclick', () => startEdit(todo.id, span));
+      span.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') startEdit(todo.id, span); });
+
+      textWrap.appendChild(span);
+
+      // controls
+      const controls = document.createElement('div'); controls.className = 'controls';
+      const editBtn = document.createElement('button'); editBtn.className='icon-btn'; editBtn.title='Edit'; editBtn.innerHTML='✎';
+      editBtn.addEventListener('click', ()=> startEdit(todo.id, span));
+      const delBtn = document.createElement('button'); delBtn.className='icon-btn'; delBtn.title='Delete'; delBtn.innerHTML='🗑';
+      delBtn.addEventListener('click', ()=>{ todos = todos.filter(t=>t.id!==todo.id); save(); render(); });
+      controls.append(editBtn, delBtn);
+
+      li.append(check, textWrap, controls);
+      todoListEl.appendChild(li);
+    });
+
+    const remaining = todos.filter(t=>!t.done).length;
+    leftCount.textContent = remaining + (remaining===1? ' item left': ' items left');
+    // update chips active state
+    chips.forEach(c=> c.classList.toggle('active', c.dataset.filter===filter));
+  }
+
+  function startEdit(id, spanEl){
+    const todo = todos.find(t=>t.id===id);
+    if(!todo) return;
+    const input = document.createElement('input'); input.className='editable'; input.value = todo.text;
+    spanEl.replaceWith(input); input.focus(); input.select();
+    input.addEventListener('blur', finish);
+    input.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ input.blur(); } else if(e.key==='Escape'){ render(); }});
+    function finish(){
+      const v = input.value.trim();
+      if(v) todo.text = v; else todos = todos.filter(t=>t.id!==id);
+      save(); render();
+    }
+  }
+
+  function addTodo(text){
+    const t = { id: Date.now().toString(), text: text.trim(), done: false };
+    todos.unshift(t); save(); render();
+  }
+
+  addBtn.addEventListener('click', ()=>{ const v=newTodoInput.value.trim(); if(!v) return; addTodo(v); newTodoInput.value=''; newTodoInput.focus(); });
+  newTodoInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ addBtn.click(); } });
+
+  chips.forEach(c=> c.addEventListener('click', ()=>{ filter = c.dataset.filter; render(); }));
+
+  clearCompletedBtn.addEventListener('click', ()=>{ todos = todos.filter(t=>!t.done); save(); render(); });
+
+  exportBtn.addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(todos, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'todos.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  importBtn.addEventListener('click', ()=> importFile.click());
+  importFile.addEventListener('change', (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader(); r.onload = ()=> { try{ const data = JSON.parse(r.result); if(Array.isArray(data)){ todos = data; save(); render(); } else alert('Invalid file'); } catch(err){ alert('Invalid JSON'); } }; r.readAsText(f);
+  });
+
+  // small clock
+  function tick(){ const d=new Date(); timeEl.textContent = d.toLocaleString(); }
+  setInterval(tick, 1000); tick();
+
+  // initial render
+  render();
+
+  // accessibility: focus add after load
+  window.addEventListener('load', ()=> newTodoInput.focus());
+
+</script>
+</body>
+</html>
